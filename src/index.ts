@@ -8,10 +8,13 @@ import {
   ApolloServerPluginLandingPageGraphQLPlayground,
   ApolloServerPluginLandingPageProductionDefault,
 } from "apollo-server-core";
+
 import { resolvers } from "./resolvers";
 
 import "./helpers/mongo";
 import { Context } from "./types";
+import { verifyJwt } from "./helpers/jwt";
+import { User } from "./models/user";
 
 async function bootstrap() {
   const schema = await buildSchema({
@@ -23,7 +26,14 @@ async function bootstrap() {
   app.use(cookieParser());
   const server = new ApolloServer({
     schema,
-    context: (ctx: Context) => ctx,
+    context: (ctx: Context) => {
+      const context = ctx;
+      if (ctx.req.cookies.accessToken) {
+        const user = verifyJwt<User>(ctx.req.cookies.accessToken);
+        context.user = user;
+      }
+      return context;
+    },
     plugins: [
       process.env.NODE_ENV === "product"
         ? ApolloServerPluginLandingPageProductionDefault()

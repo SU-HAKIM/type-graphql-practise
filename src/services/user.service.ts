@@ -10,7 +10,7 @@ class UserService {
   }
   async login(input: LoginInput, context: Context) {
     const e = "Invalid Email or Password";
-    const user = UserModel.findOne({ email: input.email });
+    const user = await UserModel.find().findByEmail(input.email).lean();
     if (!user) {
       throw new ApolloError(e);
     }

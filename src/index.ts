@@ -10,6 +10,7 @@ import {
 } from "apollo-server-core";
 
 import { resolvers } from "./resolvers";
+import { authChecker } from "./helpers/authChecker";
 
 import "./helpers/mongo";
 import { Context } from "./types";
@@ -19,7 +20,7 @@ import { User } from "./models/user";
 async function bootstrap() {
   const schema = await buildSchema({
     resolvers,
-    //authChecker
+    authChecker,
   });
   const app = express();
   app.use(express.json());
@@ -40,7 +41,7 @@ async function bootstrap() {
         : ApolloServerPluginLandingPageGraphQLPlayground(),
     ],
   });
-  server.start();
+  await server.start();
   server.applyMiddleware({ app });
 
   app.listen(process.env.PORT, () => {

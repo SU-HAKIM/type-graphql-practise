@@ -1,8 +1,26 @@
-import { getModelForClass, prop, Pre } from "@typegoose/typegoose";
+import {
+  getModelForClass,
+  prop,
+  Pre,
+  ReturnModelType,
+  queryMethod,
+  index,
+} from "@typegoose/typegoose";
 import { IsEmail, MaxLength, min, MinLength } from "class-validator";
 import { Field, InputType, ObjectType } from "type-graphql";
 import bcrypt from "bcrypt";
+import { AsQueryMethod } from "@typegoose/typegoose/lib/types";
 
+function findByEmail(
+  this: ReturnModelType<typeof User, QueryHelpers>,
+  email: User["email"]
+) {
+  return this.findOne({ email });
+}
+
+interface QueryHelpers {
+  findByEmail: AsQueryMethod<typeof findByEmail>;
+}
 @Pre<User>("save", async function () {
   if (!this.isModified("password")) {
     return;
@@ -12,6 +30,8 @@ import bcrypt from "bcrypt";
 
   this.password = hashed;
 })
+@index({ email: 1 })
+@queryMethod(findByEmail)
 @ObjectType()
 export class User {
   @Field(() => String)
@@ -25,12 +45,11 @@ export class User {
   @prop({ required: true })
   email: string;
 
-  @Field(() => String)
   @prop({ required: true })
   password: string;
 }
 
-export const UserModel = getModelForClass(User);
+export const UserModel = getModelForClass<typeof User, QueryHelpers>(User);
 
 @InputType()
 export class CreateUserInput {
